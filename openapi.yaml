@@ -1,0 +1,450 @@
+openapi: 3.0.3
+info:
+  title: High-Performance Product Analytics API
+  version: 1.0.0
+servers:
+  - url: http://localhost
+tags:
+  - name: Auth
+  - name: Products
+  - name: Events
+  - name: Analytics
+  - name: System
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      tags: [System]
+      security: []
+      summary: Liveness check
+      responses:
+        "200":
+          description: OK
+
+  /ready:
+    get:
+      tags: [System]
+      security: []
+      summary: Readiness check (DB + Redis)
+      responses:
+        "200": { description: Ready }
+        "503": { description: Not ready }
+
+  /metrics:
+    get:
+      tags: [System]
+      security: []
+      summary: Metrics (simple JSON)
+      responses:
+        "200": { description: Metrics }
+
+  /openapi.yaml:
+    get:
+      tags: [System]
+      security: []
+      summary: OpenAPI spec
+      responses:
+        "200": { description: YAML }
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterRequest" }
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+        "409": { description: Email exists }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+        "401": { description: Invalid credentials }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Me
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+
+  /products:
+    get:
+      tags: [Products]
+      summary: List products
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [active, inactive] }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        "200":
+          description: Product list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductListResponse" }
+
+    post:
+      tags: [Products]
+      summary: Create product (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductCreateRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Product" }
+        "403": { description: Forbidden }
+
+  /products/{id}:
+    get:
+      tags: [Products]
+      summary: Get product (cached)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Product
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Product" }
+        "404": { description: Not found }
+
+    patch:
+      tags: [Products]
+      summary: Update product (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductUpdateRequest" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Product" }
+
+    delete:
+      tags: [Products]
+      summary: Delete product (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: Deleted }
+
+  /events:
+    post:
+      tags: [Events]
+      summary: Ingest single event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EventCreateRequest" }
+      responses:
+        "202":
+          description: Accepted async
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AcceptedResponse" }
+
+  /events/bulk:
+    post:
+      tags: [Events]
+      summary: Ingest bulk events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EventBulkRequest" }
+      responses:
+        "202":
+          description: Accepted bulk
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BulkAcceptedResponse" }
+
+  /purchases:
+    post:
+      tags: [Events]
+      summary: Create purchase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PurchaseCreateRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Purchase" }
+
+  /analytics/products/top:
+    get:
+      tags: [Analytics]
+      summary: Top products (cached)
+      parameters:
+        - in: query
+          name: days
+          schema: { type: integer, minimum: 1, maximum: 90, default: 7 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+      responses:
+        "200":
+          description: Top products
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TopProductsResponse" }
+
+  /analytics/products/{id}/timeseries:
+    get:
+      tags: [Analytics]
+      summary: Product timeseries
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: query
+          name: days
+          schema: { type: integer, minimum: 1, maximum: 365, default: 30 }
+      responses:
+        "200":
+          description: Timeseries
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductTimeseriesResponse" }
+
+  /analytics/users/me/summary:
+    get:
+      tags: [Analytics]
+      summary: User summary (cached)
+      parameters:
+        - in: query
+          name: days
+          schema: { type: integer, minimum: 1, maximum: 365, default: 30 }
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserSummaryResponse" }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AcceptedResponse:
+      type: object
+      properties:
+        accepted: { type: boolean }
+        id: { type: string, format: uuid }
+      required: [accepted]
+
+    BulkAcceptedResponse:
+      type: object
+      properties:
+        accepted: { type: boolean }
+        received: { type: integer }
+        enqueued: { type: integer }
+      required: [accepted, received, enqueued]
+
+    RegisterRequest:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+      required: [email, password]
+
+    LoginRequest:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+      required: [email, password]
+
+    AuthResponse:
+      type: object
+      properties:
+        token: { type: string }
+        user: { $ref: "#/components/schemas/User" }
+      required: [token, user]
+
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        role: { type: string, enum: [user, admin] }
+        created_at: { type: string, format: date-time }
+      required: [id, email, role]
+
+    Product:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        price: { type: number }
+        status: { type: string, enum: [active, inactive] }
+        created_at: { type: string, format: date-time }
+      required: [id, name, price, status]
+
+    ProductCreateRequest:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        price: { type: number, minimum: 0 }
+        status: { type: string, enum: [active, inactive], default: active }
+      required: [name, price]
+
+    ProductUpdateRequest:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        price: { type: number, minimum: 0 }
+        status: { type: string, enum: [active, inactive] }
+
+    ProductListResponse:
+      type: object
+      properties:
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Product" }
+      required: [page, limit, total, items]
+
+    EventCreateRequest:
+      type: object
+      properties:
+        product_id: { type: string, format: uuid }
+        type: { type: string, enum: [view, click] }
+        ts: { type: string, format: date-time }
+        meta: { type: object, additionalProperties: true }
+      required: [product_id, type]
+
+    EventBulkRequest:
+      type: object
+      properties:
+        events:
+          type: array
+          minItems: 1
+          maxItems: 2000
+          items: { $ref: "#/components/schemas/EventCreateRequest" }
+      required: [events]
+
+    PurchaseCreateRequest:
+      type: object
+      properties:
+        product_id: { type: string, format: uuid }
+        qty: { type: integer, minimum: 1, default: 1 }
+      required: [product_id]
+
+    Purchase:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        product_id: { type: string, format: uuid }
+        qty: { type: integer }
+        amount: { type: number }
+        ts: { type: string, format: date-time }
+      required: [id, user_id, product_id, qty, amount, ts]
+
+    TopProductsResponse:
+      type: object
+      properties:
+        days: { type: integer }
+        limit: { type: integer }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              product_id: { type: string, format: uuid }
+              views: { type: integer }
+              purchases: { type: integer }
+              revenue: { type: number }
+            required: [product_id, views, purchases, revenue]
+      required: [days, limit, items]
+
+    ProductTimeseriesResponse:
+      type: object
+      properties:
+        product_id: { type: string, format: uuid }
+        days: { type: integer }
+        points:
+          type: array
+          items:
+            type: object
+            properties:
+              day: { type: string, format: date }
+              views: { type: integer }
+              purchases: { type: integer }
+              revenue: { type: number }
+            required: [day, views, purchases, revenue]
+      required: [product_id, days, points]
+
+    UserSummaryResponse:
+      type: object
+      properties:
+        days: { type: integer }
+        views: { type: integer }
+        purchases: { type: integer }
+        spend: { type: number }
+      required: [days, views, purchases, spend]
