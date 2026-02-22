@@ -1,16 +1,24 @@
 import IORedis from "ioredis";
 import { env } from "../config/env.js";
 
-export const redis = new IORedis({
-  host: env.REDIS_HOST,
-  port: env.REDIS_PORT,
-  maxRetriesPerRequest: 2,
-});
+function parseRedisOpts() {
+  if (env.REDIS_URL) {
+    const parsed = new URL(env.REDIS_URL);
+    return {
+      host: parsed.hostname,
+      port: Number(parsed.port) || 6379,
+      ...(parsed.password ? { password: decodeURIComponent(parsed.password) } : {}),
+      ...(parsed.username && parsed.username !== "default" ? { username: parsed.username } : {}),
+    };
+  }
+  return { host: env.REDIS_HOST, port: env.REDIS_PORT };
+}
 
-export const redisConnectionOpts = {
-  host: env.REDIS_HOST,
-  port: env.REDIS_PORT,
-} as const;
+const opts = parseRedisOpts();
+
+export const redis = new IORedis({ ...opts, maxRetriesPerRequest: 2 });
+
+export const redisConnectionOpts = { ...opts };
 
 export async function redisPing(): Promise<boolean> {
   try {
