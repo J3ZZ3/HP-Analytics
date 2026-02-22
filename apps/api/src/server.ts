@@ -1,6 +1,8 @@
 import { buildApp } from "./app.js";
 import { env } from "./config/env.js";
 
+console.log("[boot] REDIS_URL set:", !!process.env.REDIS_URL, "| REDIS_HOST:", process.env.REDIS_HOST ?? "(unset)", "| REDIS_PORT:", process.env.REDIS_PORT ?? "(unset)");
+
 const app = buildApp();
 
 app.listen({ port: env.PORT, host: "0.0.0.0" })
