@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import cors from "@fastify/cors";
 import jwt from "@fastify/jwt";
 import rateLimit from "@fastify/rate-limit";
 import { env } from "./config/env.js";
@@ -11,6 +12,11 @@ import { analyticsRoutes } from "./routes/analyticsRoutes.js";
 
 export function buildApp() {
   const app = Fastify({ logger: true });
+
+  app.register(cors, {
+    origin: true,
+    credentials: true,
+  });
 
   app.register(jwt, { secret: env.JWT_SECRET });
 

@@ -8,9 +8,11 @@
     "start": "node dist/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "node -e \"console.log('Add eslint if you want')\""
+    "lint": "node -e \"console.log('Add eslint if you want')\"",
+    "seed:admin": "tsx src/scripts/seed-admin.ts"
   },
   "dependencies": {
+    "@fastify/cors": "^11.2.0",
     "@fastify/jwt": "^10.0.0",
     "@fastify/rate-limit": "^10.3.0",
     "@fastify/swagger": "^9.7.0",
