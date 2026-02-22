@@ -12,6 +12,7 @@ dist/
 # Private documentation & internal files
 CURSOR_PROMPT.md
 MASTER_BUILD_PLAN.md
+architecture.md
 hp-analytics-api-starter.zip
 
 # Cursor / IDE
