@@ -51,14 +51,23 @@ docker compose up --build
 ### Events
 - `POST /events` - Ingest single event (202 async)
 - `POST /events/bulk` - Ingest up to 2000 events (202 async)
+- `POST /events/link-session` - Link anonymous session events to authenticated user
 
 ### Purchases
 - `POST /purchases` - Create purchase (amount from real product price)
+- `GET /purchases/me` - Current user purchase history (paginated)
 
 ### Analytics
 - `GET /analytics/products/top` - Top products (cached 60s)
+- `GET /analytics/products/stats` - Paginated product analytics table
+- `GET /analytics/overview` - KPI summary and period-over-period changes
+- `GET /analytics/timeseries` - Daily aggregate analytics
 - `GET /analytics/products/:id/timeseries` - Daily breakdown
 - `GET /analytics/users/me/summary` - User stats (cached 60s)
+
+Recent analytics aggregation updates:
+- `product_daily_stats` now supports funnel counters (`clicks`, `add_to_carts`, `checkout_starts`)
+- Worker aggregation rolls up these counters from event stream alongside views/purchases/revenue
 
 ## Tests
 

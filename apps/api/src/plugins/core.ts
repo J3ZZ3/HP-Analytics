@@ -10,12 +10,21 @@ import fs from "node:fs";
 import path from "node:path";
 
 export const registerCore = fp(async function registerCore(app: FastifyInstance) {
-  // Decorator for auth
+  // Strict auth -- rejects if no valid JWT
   app.decorate("authenticate", async function (request: FastifyRequest, reply: FastifyReply) {
     try {
       await request.jwtVerify();
     } catch {
       reply.code(401).send({ error: "UNAUTHORIZED", message: "Invalid or missing token" });
+    }
+  });
+
+  // Optional auth -- sets request.user if JWT present, but does not reject anonymous requests
+  app.decorate("optionalAuth", async function (request: FastifyRequest) {
+    try {
+      await request.jwtVerify();
+    } catch {
+      // Anonymous request -- no user attached, which is fine
     }
   });
 
@@ -73,5 +82,6 @@ export const registerCore = fp(async function registerCore(app: FastifyInstance)
 declare module "fastify" {
   interface FastifyInstance {
     authenticate: any;
+    optionalAuth: any;
   }
 }

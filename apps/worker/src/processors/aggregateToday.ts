@@ -3,10 +3,13 @@ import { redis } from "../config/redis.js";
 
 export async function aggregateToday(): Promise<void> {
   await pgPool.query(
-    `insert into product_daily_stats (product_id, day, views, purchases, revenue)
+    `insert into product_daily_stats (product_id, day, views, clicks, add_to_carts, checkout_starts, purchases, revenue)
      select p.id as product_id,
             current_date as day,
             coalesce(sum(case when e.type='view' then 1 else 0 end),0)::int as views,
+            coalesce(sum(case when e.type='click' then 1 else 0 end),0)::int as clicks,
+            coalesce(sum(case when e.type='add_to_cart' then 1 else 0 end),0)::int as add_to_carts,
+            coalesce(sum(case when e.type='checkout_start' then 1 else 0 end),0)::int as checkout_starts,
             coalesce(count(distinct pu.id),0)::int as purchases,
             coalesce(sum(pu.amount),0)::numeric as revenue
        from products p
@@ -15,6 +18,9 @@ export async function aggregateToday(): Promise<void> {
       group by p.id
      on conflict (product_id, day) do update
        set views=excluded.views,
+           clicks=excluded.clicks,
+           add_to_carts=excluded.add_to_carts,
+           checkout_starts=excluded.checkout_starts,
            purchases=excluded.purchases,
            revenue=excluded.revenue`
   );

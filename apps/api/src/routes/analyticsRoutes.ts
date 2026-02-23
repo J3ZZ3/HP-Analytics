@@ -10,14 +10,81 @@ export async function analyticsRoutes(app: FastifyInstance) {
           type: "object",
           properties: {
             days: { type: "integer", minimum: 1, maximum: 90, default: 7 },
-            limit: { type: "integer", minimum: 1, maximum: 50, default: 10 }
+            limit: { type: "integer", minimum: 1, maximum: 50, default: 10 },
+            sort_by: { type: "string", enum: ["views", "clicks", "add_to_carts", "checkout_starts", "purchases", "revenue"], default: "views" },
           }
         }
       }
     },
     async (req) => {
       const q = req.query as any;
-      return svc.getTopProducts(q.days ?? 7, q.limit ?? 10);
+      return svc.getTopProducts(q.days ?? 7, q.limit ?? 10, q.sort_by ?? "views");
+    }
+  );
+
+  app.get(
+    "/analytics/products/stats",
+    {
+      schema: {
+        querystring: {
+          type: "object",
+          properties: {
+            days: { type: "integer", minimum: 1, maximum: 90, default: 30 },
+            sort_by: { type: "string", enum: ["views", "clicks", "add_to_carts", "checkout_starts", "purchases", "revenue"], default: "views" },
+            sort_dir: { type: "string", enum: ["asc", "desc"], default: "desc" },
+            page: { type: "integer", minimum: 1, default: 1 },
+            limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
+            search: { type: "string" },
+          }
+        }
+      }
+    },
+    async (req) => {
+      const q = req.query as any;
+      return svc.getProductStats(
+        q.days ?? 30,
+        q.sort_by ?? "views",
+        q.sort_dir ?? "desc",
+        q.page ?? 1,
+        q.limit ?? 20,
+        q.search || undefined,
+      );
+    }
+  );
+
+  app.get(
+    "/analytics/overview",
+    {
+      schema: {
+        querystring: {
+          type: "object",
+          properties: {
+            days: { type: "integer", minimum: 1, maximum: 90, default: 7 }
+          }
+        }
+      }
+    },
+    async (req) => {
+      const q = req.query as any;
+      return svc.getOverview(q.days ?? 7);
+    }
+  );
+
+  app.get(
+    "/analytics/timeseries",
+    {
+      schema: {
+        querystring: {
+          type: "object",
+          properties: {
+            days: { type: "integer", minimum: 1, maximum: 90, default: 30 }
+          }
+        }
+      }
+    },
+    async (req) => {
+      const q = req.query as any;
+      return svc.getOverallTimeseries(q.days ?? 30);
     }
   );
 

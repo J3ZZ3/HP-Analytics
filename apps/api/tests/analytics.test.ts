@@ -64,8 +64,8 @@ describe("analytics E2E", () => {
     app = buildApp();
     mockQuery.mockResolvedValueOnce({
       rows: [
-        { product_id: PRODUCT_ID, views: 100, purchases: 10, revenue: "999.00" },
-        { product_id: "22222222-2222-2222-2222-222222222222", views: 50, purchases: 5, revenue: "250.00" },
+        { product_id: PRODUCT_ID, views: 100, clicks: 75, add_to_carts: 20, checkout_starts: 12, purchases: 10, revenue: "999.00" },
+        { product_id: "22222222-2222-2222-2222-222222222222", views: 50, clicks: 30, add_to_carts: 8, checkout_starts: 4, purchases: 5, revenue: "250.00" },
       ],
     });
 
@@ -79,9 +79,12 @@ describe("analytics E2E", () => {
     expect(body.days).toBe(7);
     expect(body.limit).toBe(10);
     expect(body.items).toHaveLength(2);
-    expect(body.items[0]).toEqual({
+    expect(body.items[0]).toMatchObject({
       product_id: PRODUCT_ID,
       views: 100,
+      clicks: 75,
+      add_to_carts: 20,
+      checkout_starts: 12,
       purchases: 10,
       revenue: 999,
     });
@@ -91,8 +94,8 @@ describe("analytics E2E", () => {
     app = buildApp();
     mockQuery.mockResolvedValueOnce({
       rows: [
-        { day: "2025-01-01", views: 30, purchases: 3, revenue: "150.00" },
-        { day: "2025-01-02", views: 20, purchases: 2, revenue: "100.00" },
+        { day: "2025-01-01", views: 30, clicks: 20, add_to_carts: 6, checkout_starts: 4, purchases: 3, revenue: "150.00" },
+        { day: "2025-01-02", views: 20, clicks: 12, add_to_carts: 4, checkout_starts: 3, purchases: 2, revenue: "100.00" },
       ],
     });
 
@@ -106,9 +109,12 @@ describe("analytics E2E", () => {
     expect(body.product_id).toBe(PRODUCT_ID);
     expect(body.days).toBe(30);
     expect(body.points).toHaveLength(2);
-    expect(body.points[0]).toEqual({
+    expect(body.points[0]).toMatchObject({
       day: "2025-01-01",
       views: 30,
+      clicks: 20,
+      add_to_carts: 6,
+      checkout_starts: 4,
       purchases: 3,
       revenue: 150,
     });
@@ -189,7 +195,7 @@ describe("purchase amount uses real product price", () => {
     expect(res.json().amount).toBe(76.5);
 
     const insertCall = mockQuery.mock.calls.find(
-      (c: any[]) => typeof c[0] === "string" && c[0].includes("insert into purchases")
+      (c: any[]) => typeof c[0] === "string" && c[0].toLowerCase().includes("insert into purchases")
     );
     expect(insertCall).toBeDefined();
     expect(insertCall![1]).toContain(76.5);

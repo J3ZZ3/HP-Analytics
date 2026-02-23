@@ -108,7 +108,7 @@ describe("productRepo", () => {
     const p = await productRepo.updateProduct("p1", { name: "Updated" });
     expect(p?.name).toBe("Updated");
     expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining("update products set"),
+      expect.stringMatching(/update products set/i),
       ["Updated", "p1"]
     );
   });
@@ -134,7 +134,7 @@ describe("eventRepo", () => {
     });
     expect(id).toBe("e1");
     expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining("insert into events"),
+      expect.stringMatching(/insert into events/i),
       expect.arrayContaining(["u1", "p1", "view"])
     );
   });
@@ -184,24 +184,31 @@ describe("analyticsRepo", () => {
   it("topProducts aggregates from product_daily_stats", async () => {
     mockQuery.mockResolvedValue({
       rows: [
-        { product_id: "p1", views: 100, purchases: 10, revenue: "999.00" },
+        { product_id: "p1", views: 100, clicks: 70, add_to_carts: 22, checkout_starts: 11, purchases: 10, revenue: "999.00" },
       ],
     });
     const result = await analyticsRepo.topProducts(7, 10);
-    expect(result).toEqual([
-      { product_id: "p1", views: 100, purchases: 10, revenue: 999 },
-    ]);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      product_id: "p1",
+      views: 100,
+      clicks: 70,
+      add_to_carts: 22,
+      checkout_starts: 11,
+      purchases: 10,
+      revenue: 999,
+    });
   });
 
   it("productTimeseries returns daily points", async () => {
     mockQuery.mockResolvedValue({
       rows: [
-        { day: "2025-01-01", views: 50, purchases: 5, revenue: "499.50" },
+        { day: "2025-01-01", views: 50, clicks: 33, add_to_carts: 9, checkout_starts: 6, purchases: 5, revenue: "499.50" },
       ],
     });
     const result = await analyticsRepo.productTimeseries("p1", 30);
     expect(result).toEqual([
-      { day: "2025-01-01", views: 50, purchases: 5, revenue: 499.5 },
+      { day: "2025-01-01", views: 50, clicks: 33, add_to_carts: 9, checkout_starts: 6, purchases: 5, revenue: 499.5 },
     ]);
   });
 

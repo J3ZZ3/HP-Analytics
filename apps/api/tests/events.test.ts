@@ -79,14 +79,14 @@ describe("events E2E", () => {
     expect(mockQueueAdd).toHaveBeenCalledWith("aggregate_event", expect.objectContaining({ eventId: "ev-1" }), expect.any(Object));
   });
 
-  it("POST /events requires authentication", async () => {
+  it("POST /events requires JWT or session_id", async () => {
     app = buildApp();
     const res = await app.inject({
       method: "POST",
       url: "/events",
       payload: { product_id: PRODUCT_ID, type: "view" },
     });
-    expect(res.statusCode).toBe(401);
+    expect(res.statusCode).toBe(400);
   });
 
   it("POST /events validates event type", async () => {

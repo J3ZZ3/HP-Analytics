@@ -8,6 +8,7 @@ export const env = {
   JWT_SECRET: process.env.JWT_SECRET || "change_me",
   RATE_LIMIT_MAX: Number(process.env.RATE_LIMIT_MAX || 100),
   RATE_LIMIT_WINDOW_MS: Number(process.env.RATE_LIMIT_WINDOW_MS || 60000),
+  CORS_ORIGINS: process.env.CORS_ORIGINS || "",
 } as const;
 
 if (!env.DATABASE_URL) {

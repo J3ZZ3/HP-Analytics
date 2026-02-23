@@ -39,6 +39,9 @@ describe("aggregateToday", () => {
     const sql1 = mockQuery.mock.calls[0][0] as string;
     const sql2 = mockQuery.mock.calls[1][0] as string;
     expect(sql1).toContain("product_daily_stats");
+    expect(sql1).toContain("clicks");
+    expect(sql1).toContain("add_to_carts");
+    expect(sql1).toContain("checkout_starts");
     expect(sql1).toContain("on conflict (product_id, day)");
     expect(sql2).toContain("user_daily_stats");
     expect(sql2).toContain("on conflict (user_id, day)");

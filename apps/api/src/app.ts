@@ -13,8 +13,12 @@ import { analyticsRoutes } from "./routes/analyticsRoutes.js";
 export function buildApp() {
   const app = Fastify({ logger: true });
 
+  const allowedOrigins = env.CORS_ORIGINS
+    ? env.CORS_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean)
+    : [];
+
   app.register(cors, {
-    origin: true,
+    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
     credentials: true,
   });
 
